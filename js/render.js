@@ -195,6 +195,8 @@ function buildGridCard(resource, delay) {
           <button class="icon-btn ${resource.starred ? 'starred' : ''}"
                   onclick="toggleStar('${resource.id}')"
                   title="Star this resource">★</button>
+          <button class="icon-btn" onclick="editCategory('${resource.id}')"
+                  title="Edit Category">⚙</button>
           <button class="icon-btn del"
                   onclick="deleteResource('${resource.id}')"
                   title="Delete this resource">✕</button>
@@ -271,6 +273,7 @@ function buildListCard(resource, delay) {
       <div class="card-actions">
         <button class="icon-btn ${resource.starred ? 'starred' : ''}"
                 onclick="toggleStar('${resource.id}')">★</button>
+        <button class="icon-btn" onclick="editCategory('${resource.id}')" title="Edit Category">⚙</button>
         <!-- Link styled as an icon button -->
         <a class="icon-btn"
            href="${resource.url}"

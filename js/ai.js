@@ -115,18 +115,17 @@ async function askCerebrasAI() {
   // ── Build the prompt ──────────────────────────────────────────
   // We tell the AI exactly what format to respond in (JSON).
   // Being very specific in the prompt gives better, consistent results.
-  const prompt = `You are a helpful assistant that categorizes study resources.
+const prompt = `You are a helpful assistant that categorizes study resources.
 
-Given this study resource:
-URL:   ${url   || 'not provided'}
-Title: ${title || 'not provided'}
+Given this study resource URL: ${url || 'not provided'}
 
 Please suggest:
-1. ONE short category (1-3 words). Examples: "DSA", "Machine Learning", "Web Dev", "System Design", "Database", "Computer Networks", "Math", "Physics", "Python", "JavaScript"
-2. THREE to FIVE relevant tags (single words or hyphen-joined, all lowercase). Examples: "algorithms", "binary-search", "neural-networks", "css-grid"
+1. ONE concise, descriptive TITLE (10-60 characters, optimized for study resources).
+2. ONE short CATEGORY (1-3 words). Examples: "DSA", "Machine Learning", "Web Dev", "System Design", "Database", "Computer Networks", "Math", "Physics", "Python", "JavaScript"
+3. THREE to FIVE relevant TAGS (single words or hyphen-joined, all lowercase). Examples: "algorithms", "binary-search", "neural-networks", "css-grid"
 
-Respond ONLY with a valid JSON object. No explanations, no markdown, no code blocks. Just the raw JSON:
-{"category": "your category here", "tags": ["tag1", "tag2", "tag3"]}`;
+Respond ONLY with valid JSON. No explanations, no markdown. Just raw JSON:
+{"title": "Suggested Title", "category": "Category", "tags": ["tag1", "tag2", "tag3"]}`;
 
 
   // ── Call the Cerebras API ─────────────────────────────────────
@@ -189,7 +188,7 @@ Respond ONLY with a valid JSON object. No explanations, no markdown, no code blo
     const suggestion  = JSON.parse(cleanText);
 
     // ── Validate the parsed object has what we expect ─────────────
-    if (!suggestion.category || !Array.isArray(suggestion.tags)) {
+    if (!suggestion.title || !suggestion.category || !Array.isArray(suggestion.tags)) {
       throw new Error('AI returned an unexpected format. Please try again.');
     }
 
@@ -222,6 +221,10 @@ Respond ONLY with a valid JSON object. No explanations, no markdown, no code blo
 ================================================================ */
 function applyAiSuggestion() {
   if (!lastAiSuggestion) return;
+
+// ── Fill in Title ────────────────────────────────────────────
+  const titleField = document.getElementById('inp-title');
+  titleField.value = lastAiSuggestion.title || titleField.value;
 
   // ── Fill in Category ─────────────────────────────────────────
   document.getElementById('inp-cat').value = lastAiSuggestion.category;
@@ -277,23 +280,29 @@ function setAiLoading(isLoading) {
 
 // showAiResult(suggestion)
 // Builds and shows the AI suggestion box below the button.
-// suggestion → { category: "DSA", tags: ["algorithms", "graphs"] }
+// suggestion → { title: "...", category: "DSA", tags: ["algorithms", "graphs"] }
 function showAiResult(suggestion) {
   const resultEl   = document.getElementById('ai-result');
   const contentEl  = document.getElementById('ai-result-content');
 
-  // Build the tags HTML (one pill per tag)
+  // Build title HTML
+  const titleHTML = `<div class="ai-title-chip">${suggestion.title}</div>`;
+
+  // Build category HTML
+  const catHTML = `<span class="ai-cat-chip">📁 ${suggestion.category}</span>`;
+
+  // Build tags HTML
   const tagsHTML = suggestion.tags.map(function(tag) {
     return `<span class="ai-tag-chip">#${tag}</span>`;
   }).join('');
 
-  // Inject the suggestion HTML
+  // Inject full suggestion HTML
   contentEl.innerHTML = `
-    <span class="ai-cat-chip">📁 ${suggestion.category}</span>
+    ${titleHTML}
+    ${catHTML}
     <div class="ai-tags-row">${tagsHTML}</div>
   `;
 
-  // Show the result box (it's hidden by default with display:none)
   resultEl.style.display = 'block';
 }
 

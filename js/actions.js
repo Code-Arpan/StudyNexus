@@ -12,6 +12,7 @@
   ║    filterByTag(tag)     → filter by a specific tag           ║
   ║    setView(view)        → switch between grid and list       ║
   ║    showToast(msg, type) → show a temporary pop-up message    ║
+  ║    editCategory(id)     → edit resource category             ║
   ╚══════════════════════════════════════════════════════════════╝
 */
 
@@ -64,6 +65,25 @@ function deleteResource(id) {
   saveData();
   renderAll();
   showToast('Resource deleted', 'error');
+}
+
+
+/* ================================================================
+   editCategory(id)
+   Opens quick category edit for resource. Uses prompt() for simplicity.
+================================================================ */
+function editCategory(id) {
+  const resource = resources.find(r => r.id === id);
+  if (!resource) return;
+
+  const newCategory = prompt('New category:', resource.category);
+  if (newCategory !== null && newCategory.trim() !== resource.category) {
+    resource.category = newCategory.trim();
+    getCatColor(resource.category); // assign new color
+    saveData();
+    renderAll();
+    showToast('Category updated!', 'success');
+  }
 }
 
 
@@ -137,7 +157,7 @@ function setView(view) {
    It automatically disappears after ~3 seconds.
 
    Parameters:
-     message → the text to display
+     message → the text to show
      type    → 'success' (green) | 'error' (red)
 ================================================================ */
 function showToast(message, type) {
@@ -172,3 +192,4 @@ function showToast(message, type) {
 
   }, 2700); // 2700ms + 300ms = 3 seconds total
 }
+
