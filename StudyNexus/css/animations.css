@@ -1,0 +1,211 @@
+/*
+  ╔══════════════════════════════════════════════════════════════╗
+  ║                 css/animations.css                           ║
+  ║                                                              ║
+  ║  All @keyframes animations live here.                        ║
+  ║  Keeping animations separate makes them easy to tweak or     ║
+  ║  disable without touching any layout/colour code.            ║
+  ║                                                              ║
+  ║  Animations in this file:                                    ║
+  ║    float        → background blobs slowly rise & fall        ║
+  ║    logoBounce   → logo icon gently rocks side to side        ║
+  ║    slideInLeft  → sidebar slides in from the left            ║
+  ║    fadeUp       → content fades up from below                ║
+  ║    cardPop      → cards spring in with overshoot             ║
+  ║    slideInRight → list cards slide in from the right         ║
+  ║    tagPop       → tag pills pop in when added                ║
+  ║    pulseShadow  → "Add" button glows rhythmically            ║
+  ║    bounce       → empty-state emoji bounces                  ║
+  ║    toastSlide   → toast slides in from the right             ║
+  ║    toastFade    → toast fades out to the right               ║
+  ║    spin         → AI loading spinner                         ║
+  ║    shimmer      → AI loading skeleton shimmer                ║
+  ╚══════════════════════════════════════════════════════════════╝
+*/
+
+
+/* ================================================================
+   float — background blobs rise 30px then return
+   Used by: .bg-blob-1 and .bg-blob-2 (style.css)
+   The blobs have different animation-delay values so they
+   don't move in sync — this creates a more organic feel.
+================================================================ */
+@keyframes float {
+  0%   { transform: translateY(0px); }
+  50%  { transform: translateY(-30px); }
+  100% { transform: translateY(0px); }
+}
+
+
+/* ================================================================
+   logoBounce — logo icon gently rocks and grows
+   Used by: .logo-icon (style.css)
+================================================================ */
+@keyframes logoBounce {
+  0%,  100% { transform: rotate(0deg)  scale(1);    }
+  25%        { transform: rotate(-5deg) scale(1.05); }
+  75%        { transform: rotate(5deg)  scale(1.05); }
+}
+
+
+/* ================================================================
+   slideInLeft — slides from off-screen left to normal position
+   Used by: .sidebar (style.css)
+================================================================ */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px); /* 30px off-screen to the left */
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+
+/* ================================================================
+   fadeUp — fades in while rising up by 20px
+   Used by: .main (style.css), .stat-card (style.css)
+   The animation-delay stagger on stat cards (0.1s, 0.2s, …)
+   is set directly in index.html using style="animation-delay:…"
+================================================================ */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* ================================================================
+   cardPop — cards spring in with a slight overshoot (bouncy feel)
+   The secret is the cubic-bezier easing in style.css:
+     cubic-bezier(0.34, 1.56, 0.64, 1)
+   The "1.56" means it goes slightly past its end position
+   before settling — like a spring!
+   Used by: .card (style.css)
+================================================================ */
+@keyframes cardPop {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+
+/* ================================================================
+   slideInRight — list view cards slide in from the right
+   Used by: .list-card (style.css)
+================================================================ */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px); /* starts 20px to the right */
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+
+/* ================================================================
+   tagPop — new tag pills pop into existence in the form
+   Used by: .form-tag-pill (modal.css)
+================================================================ */
+@keyframes tagPop {
+  from { transform: scale(0.4); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+
+/* ================================================================
+   pulseShadow — the "Add Resource" sidebar button pulses with glow
+   Used by: .add-resource-btn (style.css)
+================================================================ */
+@keyframes pulseShadow {
+  0%,  100% { box-shadow: 0 0 0 0   rgba(123, 104, 238, 0.4); }
+  50%        { box-shadow: 0 0 0 12px rgba(123, 104, 238, 0);   }
+}
+
+
+/* ================================================================
+   bounce — empty-state emoji bobs up and down
+   Used by: .empty-emoji (style.css)
+================================================================ */
+@keyframes bounce {
+  0%,  100% { transform: translateY(0);    }
+  50%        { transform: translateY(-14px); }
+}
+
+
+/* ================================================================
+   toastSlide — toast notification slides in from the right
+   Used by: .toast (modal.css)
+================================================================ */
+@keyframes toastSlide {
+  from { opacity: 0; transform: translateX(30px); }
+  to   { opacity: 1; transform: translateX(0);    }
+}
+
+
+/* ================================================================
+   toastFade — toast notification fades out to the right
+   Added to .toast by JS (modal.js) before removing from DOM
+================================================================ */
+@keyframes toastFade {
+  to { opacity: 0; transform: translateX(30px); }
+}
+
+
+/* ================================================================
+   spin — simple 360° rotation used for the AI loading spinner
+   Used by: .ai-spinner inside ai.js
+================================================================ */
+@keyframes spin {
+  from { transform: rotate(0deg);   }
+  to   { transform: rotate(360deg); }
+}
+
+
+/* ================================================================
+   shimmer — a moving gradient shimmer used on skeleton loaders
+   Used by: .ai-loading-shimmer (modal.css)
+================================================================ */
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+
+/* ================================================================
+   UTILITY ANIMATION CLASSES
+   These can be applied to any element from HTML or JS:
+     <div class="anim-fade-up">…</div>
+     element.classList.add('anim-fade-up')
+================================================================ */
+
+/* Reusable fade-up you can add to any element */
+.anim-fade-up {
+  animation: fadeUp 0.5s ease forwards;
+}
+
+/* Reusable pop for any element */
+.anim-pop {
+  animation: cardPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Reusable spin for any element */
+.anim-spin {
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<!--
+  ╔══════════════════════════════════════════════════════════════╗
+  ║              StudyNexus — index.html                         ║
+  ║                                                              ║
+  ║  This is the MAIN file. It only contains the HTML structure  ║
+  ║  (the "skeleton" of the page).                               ║
+  ║                                                              ║
+  ║  The styles and logic live in separate files:                ║
+  ║    css/style.css      → all the visual styling               ║
+  ║    css/animations.css → all the keyframe animations          ║
+  ║    css/modal.css      → modal + form styles                  ║
+  ║    js/data.js         → data storage & seed data             ║
+  ║    js/render.js       → building and showing cards           ║
+  ║    js/actions.js      → star, delete, filter, view toggle    ║
+  ║    js/modal.js        → open/close modal, form logic         ║
+  ║    js/ai.js           → Cerebras AI integration              ║
+  ║    js/app.js          → starts the app (runs last)           ║
+  ╚══════════════════════════════════════════════════════════════╝
+-->
+<html lang="en">
+<head>
+
+  <!-- UTF-8 lets the browser display all characters including emojis -->
+  <meta charset="UTF-8">
+
+  <!-- Makes the page scale correctly on phones and tablets -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>StudyNexus 📚</title>
+
+  <!-- ── Google Fonts ──────────────────────────────────────────
+       We load two fonts from Google's free CDN.
+       Playfair Display → big headings (elegant, serif)
+       Nunito           → body text (friendly, rounded)
+  ─────────────────────────────────────────────────────────── -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- ── Our CSS files (load order matters!) ───────────────────
+       style.css     → variables, layout, cards, sidebar, topbar
+       animations.css→ all @keyframes and transition classes
+       modal.css     → the popup form and toast notifications
+  ─────────────────────────────────────────────────────────── -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/modal.css">
+
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       BACKGROUND DECORATION
+       Two empty divs styled as blurry coloured circles.
+       They float slowly using CSS animation (see animations.css).
+  ════════════════════════════════════════════════════════════ -->
+  <div class="bg-blob bg-blob-1"></div>
+  <div class="bg-blob bg-blob-2"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       MAIN LAYOUT
+       CSS Grid splits the page: [260px sidebar] [rest = content]
+  ════════════════════════════════════════════════════════════ -->
+  <div class="layout">
+
+    <!-- ╔══════════════════════════════╗
+         ║          SIDEBAR             ║
+         ╚══════════════════════════════╝ -->
+    <aside class="sidebar">
+
+      <!-- Logo -->
+      <div class="logo">
+        <div class="logo-icon">📚</div>
+        <div>
+          <div class="logo-name">StudyNexus</div>
+          <div class="logo-tagline">Knowledge Hub</div>
+        </div>
+      </div>
+
+      <!-- Library section: All + Starred -->
+      <div>
+        <div class="sidebar-label">Library</div>
+        <div id="main-nav">
+          <!-- "active" class highlights the selected button -->
+          <button class="nav-btn active" onclick="setFilter('all', this)">
+            <span>◈</span> All Resources
+            <span class="nav-badge" id="count-all">0</span>
+          </button>
+          <button class="nav-btn" onclick="setFilter('starred', this)">
+            <span>★</span> Starred
+            <span class="nav-badge" id="count-starred">0</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Categories section — buttons added here by JS (render.js) -->
+      <div>
+        <div class="sidebar-label">Categories</div>
+        <div id="cat-nav">
+          <!-- render.js fills this in dynamically -->
+        </div>
+      </div>
+
+      <!-- Settings: API key for Cerebras AI -->
+      <div>
+        <div class="sidebar-label">AI Settings</div>
+        <div class="api-key-section">
+          <!-- 🔑 The user types their Cerebras API key here.
+               ai.js reads this value when making AI requests. -->
+          <input
+            class="api-key-input"
+            type="password"
+            id="cerebras-api-key"
+            placeholder="Paste Cerebras API key…"
+            oninput="saveApiKey()"
+          >
+          <!-- password type hides the key characters -->
+          <div class="api-key-hint">
+            Get your free key at
+            <a href="https://cloud.cerebras.ai" target="_blank" rel="noopener">cloud.cerebras.ai</a>
+          </div>
+          <!-- Green dot = key saved, shown by ai.js -->
+          <div class="api-key-status" id="api-key-status"></div>
+        </div>
+      </div>
+
+      <!-- Add Resource button — pinned to the bottom of sidebar -->
+      <button class="add-resource-btn" onclick="openModal()">
+        + Add Resource
+      </button>
+
+    </aside><!-- end sidebar -->
+
+
+    <!-- ╔══════════════════════════════╗
+         ║        MAIN CONTENT          ║
+         ╚══════════════════════════════╝ -->
+    <main class="main">
+
+      <!-- Top bar: Search box + Grid/List toggle -->
+      <div class="topbar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <!-- oninput fires every time the user types a character -->
+          <input
+            class="search-input"
+            type="text"
+            id="search-input"
+            placeholder="Search by title, category, tag…"
+            oninput="renderAll()"
+          >
+        </div>
+
+        <!-- ⊞ = grid icon   ≡ = list icon -->
+        <div class="view-toggle">
+          <button class="view-btn active" id="btn-grid" onclick="setView('grid')" title="Grid View">⊞</button>
+          <button class="view-btn"        id="btn-list" onclick="setView('list')"  title="List View">≡</button>
+        </div>
+      </div>
+
+      <!-- Scrollable content area -->
+      <div class="content">
+
+        <!-- ── Stats Row: 4 number cards ── -->
+        <div class="stats-row">
+          <!-- Each has an animation-delay so they stagger in -->
+          <div class="stat-card" style="animation-delay:0.1s">
+            <div class="stat-num" id="stat-total"   style="color:var(--accent)">0</div>
+            <div class="stat-label">Total Resources</div>
+          </div>
+          <div class="stat-card" style="animation-delay:0.2s">
+            <div class="stat-num" id="stat-cats"    style="color:var(--accent2)">0</div>
+            <div class="stat-label">Categories</div>
+          </div>
+          <div class="stat-card" style="animation-delay:0.3s">
+            <div class="stat-num" id="stat-starred" style="color:var(--yellow)">0</div>
+            <div class="stat-label">Starred</div>
+          </div>
+          <div class="stat-card" style="animation-delay:0.4s">
+            <div class="stat-num" id="stat-tags"    style="color:var(--accent3)">0</div>
+            <div class="stat-label">Unique Tags</div>
+          </div>
+        </div>
+
+        <!-- Page heading (title changes with active filter) -->
+        <div class="page-heading">
+          <h1 class="page-title"    id="page-title">All Resources</h1>
+          <span class="page-subtitle" id="page-count">0 items</span>
+        </div>
+
+        <!-- Tag filter pills — built by render.js -->
+        <div class="tag-bar" id="tag-bar"></div>
+
+        <!-- Resource cards go here — built by render.js -->
+        <div id="resources-container"></div>
+
+      </div><!-- end .content -->
+    </main><!-- end .main -->
+
+  </div><!-- end .layout -->
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       ADD RESOURCE MODAL
+       Hidden by default. openModal() / closeModal() in modal.js
+       toggle the "open" class which CSS uses to show/hide it.
+  ════════════════════════════════════════════════════════════ -->
+  <div class="modal-overlay" id="modal-overlay" onclick="closeIfOverlay(event)">
+    <div class="modal">
+
+      <div class="modal-header">
+        <h2 class="modal-title">Add Resource</h2>
+        <!-- × button: rotates on hover (see modal.css) -->
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+
+      <!-- URL -->
+      <div class="form-group">
+        <label class="form-label">URL *</label>
+        <input
+          class="form-input"
+          type="url"
+          id="inp-url"
+          placeholder="https://…"
+          oninput="autoFillTitle()"
+        >
+        <!-- autoFillTitle() in modal.js guesses a title from the domain -->
+      </div>
+
+      <!-- Title -->
+      <div class="form-group">
+        <label class="form-label">Title *</label>
+        <input
+          class="form-input"
+          type="text"
+          id="inp-title"
+          placeholder="e.g. Python Tutorial — Real Python"
+        >
+      </div>
+
+      <!-- Category + Importance side-by-side -->
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Category *</label>
+          <!-- "list" attribute connects to the <datalist> for autocomplete -->
+          <input
+            class="form-input"
+            type="text"
+            id="inp-cat"
+            placeholder="e.g. DSA, React…"
+            list="cat-list"
+          >
+          <datalist id="cat-list">
+            <!-- Options filled dynamically by render.js -->
+          </datalist>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Importance</label>
+          <select class="form-select" id="inp-importance">
+            <option value="normal">Normal</option>
+            <option value="important">⭐ Important</option>
+            <option value="critical">🔥 Critical</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Tags input -->
+      <div class="form-group" style="margin-top:16px">
+        <label class="form-label">
+          Tags
+          <span class="form-hint">(press Enter or comma to add)</span>
+        </label>
+        <!-- Clicking anywhere in this box focuses the hidden text input (modal.js) -->
+        <div class="tags-input-area" id="tags-area" onclick="focusTagInput()">
+          <input
+            class="tags-text-input"
+            id="tag-input"
+            placeholder="Add a tag…"
+            onkeydown="onTagKey(event)"
+          >
+        </div>
+      </div>
+
+      <!-- ── AI SUGGEST SECTION ──────────────────────────────────
+           This entire block is controlled by ai.js.
+           The button calls askCerebrasAI() which:
+             1. Reads the URL + Title from the form
+             2. Sends them to the Cerebras API
+             3. Fills in category + tags automatically
+      ─────────────────────────────────────────────────────────── -->
+      <div class="ai-section">
+        <div class="ai-section-header">
+          <span class="ai-icon">✦</span>
+          <span class="ai-label">AI Assistant</span>
+          <span class="ai-badge">Cerebras</span>
+        </div>
+
+        <p class="ai-description">
+          Let AI suggest the <strong>category</strong> and <strong>tags</strong>
+          based on your URL and title. Add your API key in the sidebar first.
+        </p>
+
+        <!-- The AI suggest button -->
+        <button class="ai-btn" id="ai-suggest-btn" onclick="askCerebrasAI()">
+          <span id="ai-btn-icon">✦</span>
+          <span id="ai-btn-text">Suggest with AI</span>
+        </button>
+
+        <!-- AI result area — shown after AI responds -->
+        <div class="ai-result" id="ai-result" style="display:none">
+          <div class="ai-result-label">AI suggested:</div>
+          <div id="ai-result-content"></div>
+          <!-- "Apply" button fills the form fields with AI suggestions -->
+          <button class="ai-apply-btn" onclick="applyAiSuggestion()">
+            ✓ Apply Suggestions
+          </button>
+        </div>
+
+        <!-- Error message area -->
+        <div class="ai-error" id="ai-error" style="display:none"></div>
+      </div>
+
+      <!-- Save button -->
+      <button class="submit-btn" onclick="addResource()">
+        Save Resource →
+      </button>
+
+    </div><!-- end .modal -->
+  </div><!-- end .modal-overlay -->
+
+
+  <!-- Toast notification container (bottom-right corner) -->
+  <div class="toast-container" id="toast-container"></div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       JAVASCRIPT FILES — loaded at the bottom of <body>
+       Order matters! Each file may use functions from files above it.
+
+       1. data.js    → Must load first (others read `resources`)
+       2. render.js  → Uses data from data.js
+       3. actions.js → Uses render functions
+       4. modal.js   → Uses data + render + actions
+       5. ai.js      → Uses modal form fields
+       6. app.js     → Runs last, starts the whole app
+  ════════════════════════════════════════════════════════════ -->
+  <script src="js/data.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/actions.js"></script>
+  <script src="js/modal.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>

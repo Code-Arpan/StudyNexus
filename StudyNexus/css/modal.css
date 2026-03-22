@@ -1,0 +1,509 @@
+/*
+  ╔══════════════════════════════════════════════════════════════╗
+  ║                   css/modal.css                              ║
+  ║                                                              ║
+  ║  Styles for:                                                 ║
+  ║    • Modal overlay (the dark backdrop)                       ║
+  ║    • Modal box (the white popup card)                        ║
+  ║    • Form elements (inputs, select, labels)                  ║
+  ║    • Tags input area                                         ║
+  ║    • AI section (Cerebras suggest panel)                     ║
+  ║    • Toast notifications                                     ║
+  ╚══════════════════════════════════════════════════════════════╝
+*/
+
+/* ================================================================
+   MODAL OVERLAY
+   Covers the entire screen with a semi-transparent dark backdrop.
+   "pointer-events: none" means clicks pass through when hidden.
+   "backdrop-filter: blur" blurs the page behind the modal.
+================================================================ */
+.modal-overlay {
+  position: fixed;   /* always covers the full viewport */
+  inset: 0;          /* shorthand for top:0 right:0 bottom:0 left:0 */
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  z-index: 100;      /* above everything else on the page */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;     /* so the modal doesn't touch screen edges on mobile */
+
+  /* Hidden by default */
+  opacity: 0;
+  pointer-events: none; /* clicks pass through the overlay when hidden */
+  transition: opacity 0.25s;
+}
+
+/* When modal.js calls openModal(), it adds the "open" class */
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: all; /* now clicks register */
+}
+
+/* ================================================================
+   MODAL BOX
+   The actual popup container that holds the form.
+================================================================ */
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 32px;
+  width: 100%;
+  max-width: 520px;          /* doesn't grow wider than 520px */
+  box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5);
+  max-height: 90vh;          /* never taller than 90% of screen */
+  overflow-y: auto;          /* scroll inside modal if content is tall */
+
+  /* Starts slightly scaled down; grows to normal when overlay opens */
+  transform: scale(0.92) translateY(16px);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* When overlay gets "open" class, the modal pops to normal size */
+.modal-overlay.open .modal {
+  transform: scale(1) translateY(0);
+}
+
+/* ── Modal header (title + close button) ── */
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 26px;
+}
+
+.modal-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+/* × close button */
+.modal-close {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* spins 90° on hover — a small delightful detail */
+  transition: color 0.15s, transform 0.2s;
+}
+
+.modal-close:hover {
+  color: var(--text);
+  transform: rotate(90deg);
+}
+
+/* ================================================================
+   FORM ELEMENTS
+================================================================ */
+
+/* Spacing between each field group */
+.form-group {
+  margin-bottom: 16px;
+}
+
+/* ALL CAPS small label above each input */
+.form-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 7px;
+}
+
+/* Inline hint text inside the label (e.g. "press Enter to add") */
+.form-hint {
+  font-size: 9px;
+  opacity: 0.5;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+/* Text inputs and select dropdown share the same visual style */
+.form-input,
+.form-select {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  appearance: none; /* removes browser default dropdown arrow styling */
+}
+
+.form-input:focus,
+.form-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(123, 104, 238, 0.12);
+}
+
+.form-input::placeholder {
+  color: var(--text-dim);
+}
+
+/* Two form fields placed side by side */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 0; /* the child .form-group handles their own margin */
+}
+
+/* ================================================================
+   TAGS INPUT AREA
+   Looks like a text input but contains tag "pills" + a real input.
+   Clicking anywhere in the area (including the pills) focuses
+   the actual text input (handled by focusTagInput() in modal.js).
+================================================================ */
+.tags-input-area {
+  display: flex;
+  flex-wrap: wrap;      /* tags wrap to next line */
+  gap: 6px;
+  align-items: center;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px;
+  min-height: 46px;
+  cursor: text;         /* shows text cursor to hint it's typeable */
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* Glow when something inside is focused */
+.tags-input-area:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(123, 104, 238, 0.12);
+}
+
+/* Tag pill shown inside the tags area */
+.form-tag-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(123, 104, 238, 0.15);
+  border: 1px solid rgba(123, 104, 238, 0.3);
+  color: var(--accent);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  /* pop in using tagPop animation from animations.css */
+  animation: tagPop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* The × remove button on each tag pill */
+.form-tag-remove {
+  cursor: pointer;
+  font-size: 15px;
+  opacity: 0.6;
+  line-height: 1;
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.form-tag-remove:hover {
+  opacity: 1;
+  transform: scale(1.3);
+}
+
+/* The invisible text input inside the tags area */
+.tags-text-input {
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px;
+  outline: none;
+  min-width: 80px;
+  flex: 1;
+}
+
+.tags-text-input::placeholder { color: var(--text-dim); }
+
+/* ================================================================
+   AI SECTION
+   The Cerebras AI suggestion panel inside the modal.
+================================================================ */
+.ai-section {
+  margin-top: 4px;
+  margin-bottom: 6px;
+  background: linear-gradient(135deg,
+    rgba(123, 104, 238, 0.06),
+    rgba(86, 217, 160, 0.06)
+  );
+  border: 1px solid rgba(123, 104, 238, 0.2);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+/* Header row: sparkle icon + "AI Assistant" label + "Cerebras" badge */
+.ai-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.ai-icon {
+  font-size: 16px;
+  color: var(--accent3);
+}
+
+.ai-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* "Cerebras" chip/badge */
+.ai-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: rgba(86, 217, 160, 0.15);
+  border: 1px solid rgba(86, 217, 160, 0.3);
+  color: var(--accent3);
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-left: auto; /* pushes it to the right */
+}
+
+/* Short description below the AI header */
+.ai-description {
+  font-size: 12px;
+  color: var(--text-mid);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.ai-description strong {
+  color: var(--text);
+}
+
+/* The "Suggest with AI" button */
+.ai-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px;
+  background: rgba(86, 217, 160, 0.1);
+  border: 1px solid rgba(86, 217, 160, 0.3);
+  border-radius: var(--radius-sm);
+  color: var(--accent3);
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  transition: all 0.2s;
+}
+
+.ai-btn:hover {
+  background: rgba(86, 217, 160, 0.18);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(86, 217, 160, 0.2);
+}
+
+/* When the AI is loading, the button is dimmed and not clickable */
+.ai-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Loading spinner inside the AI button (added by ai.js) */
+.ai-spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid rgba(86, 217, 160, 0.3);
+  border-top-color: var(--accent3);
+  border-radius: 50%;
+  /* spin animation from animations.css */
+  animation: spin 0.7s linear infinite;
+}
+
+/* AI result box — shown after AI responds */
+.ai-result {
+  margin-top: 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+}
+
+.ai-result-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+/* AI suggested category chip */
+.ai-cat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(123, 104, 238, 0.12);
+  border: 1px solid rgba(123, 104, 238, 0.25);
+  color: var(--accent);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+/* Wrapper for suggested tag pills */
+.ai-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+/* Individual suggested tag pill */
+.ai-tag-chip {
+  background: rgba(86, 217, 160, 0.1);
+  border: 1px solid rgba(86, 217, 160, 0.25);
+  color: var(--accent3);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Apply button below AI suggestions */
+.ai-apply-btn {
+  width: 100%;
+  padding: 8px;
+  background: rgba(123, 104, 238, 0.12);
+  border: 1px solid rgba(123, 104, 238, 0.25);
+  border-radius: var(--radius-sm);
+  color: var(--accent);
+  font-family: 'Nunito', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ai-apply-btn:hover {
+  background: rgba(123, 104, 238, 0.22);
+}
+
+/* Error message shown when the AI call fails */
+.ai-error {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: rgba(255, 107, 107, 0.08);
+  border: 1px solid rgba(255, 107, 107, 0.2);
+  border-radius: var(--radius-sm);
+  color: var(--red);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* Shimmer skeleton for loading state */
+.ai-loading-shimmer {
+  height: 14px;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--surface2) 25%,
+    var(--surface)  50%,
+    var(--surface2) 75%
+  );
+  background-size: 200% 100%;
+  /* shimmer animation from animations.css */
+  animation: shimmer 1.5s infinite;
+  margin-bottom: 8px;
+}
+
+/* ================================================================
+   SUBMIT BUTTON
+================================================================ */
+.submit-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--accent), #9d8ef5);
+  border: none;
+  border-radius: var(--radius);
+  color: white;
+  font-family: 'Nunito', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 10px;
+  letter-spacing: 0.3px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(123, 104, 238, 0.45);
+}
+
+/* Clicks back down — gives a "press" feeling */
+.submit-btn:active {
+  transform: translateY(0);
+}
+
+/* ================================================================
+   TOAST NOTIFICATIONS
+   Small pop-up messages in the bottom-right corner.
+   They slide in using toastSlide (animations.css).
+================================================================ */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 200; /* above the modal overlay */
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  /* slides in from right using toastSlide in animations.css */
+  animation: toastSlide 0.3s ease;
+}
+
+/* JS adds this class before removing the toast */
+.toast.removing {
+  animation: toastFade 0.3s ease forwards;
+}
+
+/* Green border = success */
+.toast.success { border-color: rgba(86,  217, 160, 0.35); }
+/* Red border = error */
+.toast.error   { border-color: rgba(255, 107, 107, 0.35); }
