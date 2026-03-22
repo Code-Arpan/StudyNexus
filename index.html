@@ -1,74 +1,43 @@
 <!DOCTYPE html>
 <!--
   ╔══════════════════════════════════════════════════════════════╗
-  ║              StudyNexus — index.html                         ║
+  ║              StudyNexus — index.html  (v2)                   ║
   ║                                                              ║
-  ║  This is the MAIN file. It only contains the HTML structure  ║
-  ║  (the "skeleton" of the page).                               ║
-  ║                                                              ║
-  ║  The styles and logic live in separate files:                ║
-  ║    css/style.css      → all the visual styling               ║
-  ║    css/animations.css → all the keyframe animations          ║
-  ║    css/modal.css      → modal + form styles                  ║
-  ║    js/data.js         → data storage & seed data             ║
-  ║    js/render.js       → building and showing cards           ║
-  ║    js/actions.js      → star, delete, filter, view toggle    ║
-  ║    js/modal.js        → open/close modal, form logic         ║
-  ║    js/ai.js           → Cerebras AI integration              ║
-  ║    js/app.js          → starts the app (runs last)           ║
+  ║  NEW in v2:                                                  ║
+  ║    • Add LOCAL FILES (PDF, PPT, images, videos, etc.)        ║
+  ║    • File stored as base64 in localStorage                   ║
+  ║    • AI suggests title + category + tags from filename/URL   ║
+  ║    • Edit category (and other fields) after saving           ║
+  ║    • Type-tab switcher: URL vs File in the add modal         ║
   ╚══════════════════════════════════════════════════════════════╝
 -->
 <html lang="en">
 <head>
-
-  <!-- UTF-8 lets the browser display all characters including emojis -->
   <meta charset="UTF-8">
-
-  <!-- Makes the page scale correctly on phones and tablets -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <title>StudyNexus 📚</title>
-
-  <!-- ── Google Fonts ──────────────────────────────────────────
-       We load two fonts from Google's free CDN.
-       Playfair Display → big headings (elegant, serif)
-       Nunito           → body text (friendly, rounded)
-  ─────────────────────────────────────────────────────────── -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-  <!-- ── Our CSS files (load order matters!) ───────────────────
-       style.css     → variables, layout, cards, sidebar, topbar
-       animations.css→ all @keyframes and transition classes
-       modal.css     → the popup form and toast notifications
-  ─────────────────────────────────────────────────────────── -->
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/animations.css">
   <link rel="stylesheet" href="css/modal.css">
-
 </head>
 <body>
 
-  <!-- ═══════════════════════════════════════════════════════════
-       BACKGROUND DECORATION
-       Two empty divs styled as blurry coloured circles.
-       They float slowly using CSS animation (see animations.css).
-  ════════════════════════════════════════════════════════════ -->
+  <!-- Decorative glowing background blobs (animated in animations.css) -->
   <div class="bg-blob bg-blob-1"></div>
   <div class="bg-blob bg-blob-2"></div>
 
-  <!-- ═══════════════════════════════════════════════════════════
-       MAIN LAYOUT
-       CSS Grid splits the page: [260px sidebar] [rest = content]
-  ════════════════════════════════════════════════════════════ -->
+  <!-- ═══════════════════════════════════════════
+       MAIN LAYOUT  — sidebar | main content
+  ════════════════════════════════════════════ -->
   <div class="layout">
 
-    <!-- ╔══════════════════════════════╗
-         ║          SIDEBAR             ║
-         ╚══════════════════════════════╝ -->
+    <!-- ╔══════════════╗
+         ║   SIDEBAR    ║
+         ╚══════════════╝ -->
     <aside class="sidebar">
 
-      <!-- Logo -->
       <div class="logo">
         <div class="logo-icon">📚</div>
         <div>
@@ -77,11 +46,10 @@
         </div>
       </div>
 
-      <!-- Library section: All + Starred -->
+      <!-- Library nav (All, Starred) -->
       <div>
         <div class="sidebar-label">Library</div>
         <div id="main-nav">
-          <!-- "active" class highlights the selected button -->
           <button class="nav-btn active" onclick="setFilter('all', this)">
             <span>◈</span> All Resources
             <span class="nav-badge" id="count-all">0</span>
@@ -93,7 +61,15 @@
         </div>
       </div>
 
-      <!-- Categories section — buttons added here by JS (render.js) -->
+      <!-- File-type filter nav -->
+      <div>
+        <div class="sidebar-label">By Type</div>
+        <div id="type-nav">
+          <!-- Filled by render.js -->
+        </div>
+      </div>
+
+      <!-- Category nav (generated from data) -->
       <div>
         <div class="sidebar-label">Categories</div>
         <div id="cat-nav">
@@ -101,12 +77,10 @@
         </div>
       </div>
 
-      <!-- Settings: API key for Cerebras AI -->
+      <!-- Cerebras API key -->
       <div>
         <div class="sidebar-label">AI Settings</div>
         <div class="api-key-section">
-          <!-- 🔑 The user types their Cerebras API key here.
-               ai.js reads this value when making AI requests. -->
           <input
             class="api-key-input"
             type="password"
@@ -114,56 +88,46 @@
             placeholder="Paste Cerebras API key…"
             oninput="saveApiKey()"
           >
-          <!-- password type hides the key characters -->
           <div class="api-key-hint">
-            Get your free key at
-            <a href="https://cloud.cerebras.ai" target="_blank" rel="noopener">cloud.cerebras.ai</a>
+            Free key at <a href="https://cloud.cerebras.ai" target="_blank" rel="noopener">cloud.cerebras.ai</a>
           </div>
-          <!-- Green dot = key saved, shown by ai.js -->
           <div class="api-key-status" id="api-key-status"></div>
         </div>
       </div>
 
-      <!-- Add Resource button — pinned to the bottom of sidebar -->
       <button class="add-resource-btn" onclick="openModal()">
         + Add Resource
       </button>
 
-    </aside><!-- end sidebar -->
+    </aside>
 
-
-    <!-- ╔══════════════════════════════╗
-         ║        MAIN CONTENT          ║
-         ╚══════════════════════════════╝ -->
+    <!-- ╔══════════════╗
+         ║     MAIN     ║
+         ╚══════════════╝ -->
     <main class="main">
 
-      <!-- Top bar: Search box + Grid/List toggle -->
+      <!-- Search + view toggle -->
       <div class="topbar">
         <div class="search-box">
           <span class="search-icon">🔍</span>
-          <!-- oninput fires every time the user types a character -->
           <input
             class="search-input"
             type="text"
             id="search-input"
-            placeholder="Search by title, category, tag…"
+            placeholder="Search resources, files, tags…"
             oninput="renderAll()"
           >
         </div>
-
-        <!-- ⊞ = grid icon   ≡ = list icon -->
         <div class="view-toggle">
           <button class="view-btn active" id="btn-grid" onclick="setView('grid')" title="Grid View">⊞</button>
           <button class="view-btn"        id="btn-list" onclick="setView('list')"  title="List View">≡</button>
         </div>
       </div>
 
-      <!-- Scrollable content area -->
       <div class="content">
 
-        <!-- ── Stats Row: 4 number cards ── -->
+        <!-- Stats row -->
         <div class="stats-row">
-          <!-- Each has an animation-delay so they stagger in -->
           <div class="stat-card" style="animation-delay:0.1s">
             <div class="stat-num" id="stat-total"   style="color:var(--accent)">0</div>
             <div class="stat-label">Total Resources</div>
@@ -182,67 +146,121 @@
           </div>
         </div>
 
-        <!-- Page heading (title changes with active filter) -->
+        <!-- Heading -->
         <div class="page-heading">
           <h1 class="page-title"    id="page-title">All Resources</h1>
           <span class="page-subtitle" id="page-count">0 items</span>
         </div>
 
-        <!-- Tag filter pills — built by render.js -->
+        <!-- Tag filter pills -->
         <div class="tag-bar" id="tag-bar"></div>
 
-        <!-- Resource cards go here — built by render.js -->
+        <!-- Cards injected here by render.js -->
         <div id="resources-container"></div>
 
-      </div><!-- end .content -->
-    </main><!-- end .main -->
+      </div>
+    </main>
 
   </div><!-- end .layout -->
 
 
-  <!-- ═══════════════════════════════════════════════════════════
+  <!-- ═══════════════════════════════════════════════════════
        ADD RESOURCE MODAL
-       Hidden by default. openModal() / closeModal() in modal.js
-       toggle the "open" class which CSS uses to show/hide it.
-  ════════════════════════════════════════════════════════════ -->
+       Has two tabs: URL tab and File tab.
+       Switching tabs is handled by modal.js (switchTab function).
+  ════════════════════════════════════════════════════════ -->
   <div class="modal-overlay" id="modal-overlay" onclick="closeIfOverlay(event)">
     <div class="modal">
 
       <div class="modal-header">
-        <h2 class="modal-title">Add Resource</h2>
-        <!-- × button: rotates on hover (see modal.css) -->
+        <h2 class="modal-title" id="modal-main-title">Add Resource</h2>
         <button class="modal-close" onclick="closeModal()">×</button>
       </div>
 
-      <!-- URL -->
-      <div class="form-group">
-        <label class="form-label">URL *</label>
-        <input
-          class="form-input"
-          type="url"
-          id="inp-url"
-          placeholder="https://…"
-          oninput="autoFillTitle()"
-        >
-        <!-- autoFillTitle() in modal.js guesses a title from the domain -->
+      <!-- ── TAB SWITCHER: URL vs File ── -->
+      <div class="tab-switcher">
+        <!-- Tab buttons — clicking calls switchTab() in modal.js -->
+        <button class="tab-btn active" id="tab-url"  onclick="switchTab('url')">
+          🔗 Web URL
+        </button>
+        <button class="tab-btn"        id="tab-file" onclick="switchTab('file')">
+          📁 Local File
+        </button>
       </div>
 
-      <!-- Title -->
+      <!-- ══════════════════════════════
+           TAB 1: URL input
+      ══════════════════════════════ -->
+      <div id="url-panel">
+        <div class="form-group">
+          <label class="form-label">URL *</label>
+          <input
+            class="form-input"
+            type="url"
+            id="inp-url"
+            placeholder="https://…"
+            oninput="autoFillTitle()"
+          >
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════
+           TAB 2: File upload
+      ══════════════════════════════ -->
+      <div id="file-panel" style="display:none">
+
+        <!-- Drag-and-drop / click-to-browse zone -->
+        <div class="file-drop-zone" id="file-drop-zone"
+             onclick="document.getElementById('inp-file').click()"
+             ondragover="onDragOver(event)"
+             ondragleave="onDragLeave(event)"
+             ondrop="onFileDrop(event)">
+          <div class="file-drop-icon" id="file-drop-icon">📂</div>
+          <div class="file-drop-text" id="file-drop-text">
+            Click to browse or drag & drop
+          </div>
+          <div class="file-drop-hint">
+            PDF, PPT, PPTX, DOC, DOCX, XLS, XLSX,<br>
+            JPG, PNG, GIF, MP4, MOV, AVI, MP3 and more
+          </div>
+          <!-- The actual hidden file input — triggered by clicking the zone -->
+          <input
+            type="file"
+            id="inp-file"
+            style="display:none"
+            accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.webp,.svg,.mp4,.mov,.avi,.mkv,.mp3,.wav,.zip,.txt,.md,.csv"
+            onchange="onFileSelected(event)"
+          >
+        </div>
+
+        <!-- File info row — shown once a file is picked -->
+        <div class="file-info-row" id="file-info-row" style="display:none">
+          <span class="file-type-icon" id="file-type-icon">📄</span>
+          <div class="file-info-text">
+            <div class="file-info-name" id="file-info-name"></div>
+            <div class="file-info-size" id="file-info-size"></div>
+          </div>
+          <!-- × to clear the chosen file -->
+          <button class="file-clear-btn" onclick="clearFile()" title="Remove file">×</button>
+        </div>
+
+      </div>
+
+      <!-- ── Shared fields (shown for both tabs) ── -->
+
       <div class="form-group">
         <label class="form-label">Title *</label>
         <input
           class="form-input"
           type="text"
           id="inp-title"
-          placeholder="e.g. Python Tutorial — Real Python"
+          placeholder="Give this resource a name"
         >
       </div>
 
-      <!-- Category + Importance side-by-side -->
       <div class="form-row">
         <div class="form-group" style="margin-bottom:0">
           <label class="form-label">Category *</label>
-          <!-- "list" attribute connects to the <datalist> for autocomplete -->
           <input
             class="form-input"
             type="text"
@@ -250,9 +268,7 @@
             placeholder="e.g. DSA, React…"
             list="cat-list"
           >
-          <datalist id="cat-list">
-            <!-- Options filled dynamically by render.js -->
-          </datalist>
+          <datalist id="cat-list"></datalist>
         </div>
         <div class="form-group" style="margin-bottom:0">
           <label class="form-label">Importance</label>
@@ -264,86 +280,117 @@
         </div>
       </div>
 
-      <!-- Tags input -->
       <div class="form-group" style="margin-top:16px">
         <label class="form-label">
-          Tags
-          <span class="form-hint">(press Enter or comma to add)</span>
+          Tags <span class="form-hint">(Enter or comma to add)</span>
         </label>
-        <!-- Clicking anywhere in this box focuses the hidden text input (modal.js) -->
         <div class="tags-input-area" id="tags-area" onclick="focusTagInput()">
-          <input
-            class="tags-text-input"
-            id="tag-input"
-            placeholder="Add a tag…"
-            onkeydown="onTagKey(event)"
-          >
+          <input class="tags-text-input" id="tag-input" placeholder="Add a tag…" onkeydown="onTagKey(event)">
         </div>
       </div>
 
-      <!-- ── AI SUGGEST SECTION ──────────────────────────────────
-           This entire block is controlled by ai.js.
-           The button calls askCerebrasAI() which:
-             1. Reads the URL + Title from the form
-             2. Sends them to the Cerebras API
-             3. Fills in category + tags automatically
-      ─────────────────────────────────────────────────────────── -->
+      <!-- ── AI SUGGEST SECTION ── -->
       <div class="ai-section">
         <div class="ai-section-header">
           <span class="ai-icon">✦</span>
           <span class="ai-label">AI Assistant</span>
           <span class="ai-badge">Cerebras</span>
         </div>
-
         <p class="ai-description">
-          Let AI suggest the <strong>Title</strong> , <strong>category</strong> and <strong>tags</strong>
-          based on your URL. Add your API key in the sidebar first.
+          AI reads your <strong>URL or filename</strong> and suggests a
+          <strong>title</strong>, <strong>category</strong>, and <strong>tags</strong>.
         </p>
-
-        <!-- The AI suggest button -->
         <button class="ai-btn" id="ai-suggest-btn" onclick="askCerebrasAI()">
           <span id="ai-btn-icon">✦</span>
           <span id="ai-btn-text">Suggest with AI</span>
         </button>
-
-        <!-- AI result area — shown after AI responds -->
         <div class="ai-result" id="ai-result" style="display:none">
           <div class="ai-result-label">AI suggested:</div>
           <div id="ai-result-content"></div>
-          <!-- "Apply" button fills the form fields with AI suggestions -->
-          <button class="ai-apply-btn" onclick="applyAiSuggestion()">
-            ✓ Apply Suggestions
-          </button>
+          <button class="ai-apply-btn" onclick="applyAiSuggestion()">✓ Apply Suggestions</button>
         </div>
-
-        <!-- Error message area -->
         <div class="ai-error" id="ai-error" style="display:none"></div>
       </div>
 
-      <!-- Save button -->
-      <button class="submit-btn" onclick="addResource()">
-        Save Resource →
+      <button class="submit-btn" onclick="addResource()">Save Resource →</button>
+
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════
+       EDIT RESOURCE MODAL
+       A second, separate modal that opens when the user clicks
+       the ✏ (edit) button on any card. Lets them change:
+         • Title, Category, Importance, Tags
+       Category change is the key new feature here.
+  ════════════════════════════════════════════════════════ -->
+  <div class="modal-overlay" id="edit-modal-overlay" onclick="closeEditIfOverlay(event)">
+    <div class="modal">
+
+      <div class="modal-header">
+        <h2 class="modal-title">Edit Resource</h2>
+        <button class="modal-close" onclick="closeEditModal()">×</button>
+      </div>
+
+      <!-- Hidden field that stores which resource is being edited -->
+      <!-- We read this id in actions.js when saving -->
+      <input type="hidden" id="edit-resource-id">
+
+      <!-- Show what type of resource this is (read-only info) -->
+      <div class="edit-resource-preview" id="edit-resource-preview"></div>
+
+      <div class="form-group">
+        <label class="form-label">Title *</label>
+        <input class="form-input" type="text" id="edit-inp-title" placeholder="Resource title">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Category *
+            <!-- Small hint explaining they can change category here -->
+            <span class="form-hint">(you can change this!)</span>
+          </label>
+          <input
+            class="form-input"
+            type="text"
+            id="edit-inp-cat"
+            placeholder="e.g. DSA, React…"
+            list="edit-cat-list"
+          >
+          <datalist id="edit-cat-list"></datalist>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Importance</label>
+          <select class="form-select" id="edit-inp-importance">
+            <option value="normal">Normal</option>
+            <option value="important">⭐ Important</option>
+            <option value="critical">🔥 Critical</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top:16px">
+        <label class="form-label">
+          Tags <span class="form-hint">(Enter or comma to add)</span>
+        </label>
+        <div class="tags-input-area" id="edit-tags-area" onclick="focusEditTagInput()">
+          <input class="tags-text-input" id="edit-tag-input" placeholder="Add a tag…" onkeydown="onEditTagKey(event)">
+        </div>
+      </div>
+
+      <button class="submit-btn" style="background:linear-gradient(135deg,#56d9a0,#38b082)" onclick="saveEditResource()">
+        Save Changes →
       </button>
 
-    </div><!-- end .modal -->
-  </div><!-- end .modal-overlay -->
+    </div>
+  </div>
 
 
-  <!-- Toast notification container (bottom-right corner) -->
+  <!-- Toast notifications -->
   <div class="toast-container" id="toast-container"></div>
 
-
-  <!-- ═══════════════════════════════════════════════════════════
-       JAVASCRIPT FILES — loaded at the bottom of <body>
-       Order matters! Each file may use functions from files above it.
-
-       1. data.js    → Must load first (others read `resources`)
-       2. render.js  → Uses data from data.js
-       3. actions.js → Uses render functions
-       4. modal.js   → Uses data + render + actions
-       5. ai.js      → Uses modal form fields
-       6. app.js     → Runs last, starts the whole app
-  ════════════════════════════════════════════════════════════ -->
+  <!-- JS files — ORDER MATTERS -->
   <script src="js/data.js"></script>
   <script src="js/render.js"></script>
   <script src="js/actions.js"></script>
